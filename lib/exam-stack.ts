@@ -95,11 +95,34 @@ export class ExamStack extends cdk.Stack {
       displayName: "Exam topic",
     });
     
+    
     const queueA = new sqs.Queue(this, "queueA", {
       receiveMessageWaitTime: cdk.Duration.seconds(5),
     });
     
-    topic1.addSubscription(new subs.SqsSubscription(queueA));
+    topic1.addSubscription(new subs.SqsSubscription(queueA, {
+      filterPolicy: {
+       
+        country: sns.SubscriptionFilter.stringFilter({
+          allowlist: ["Ireland", "China"],
+        }),
+      },
+    }));
+    
+    
+    const queueB = new sqs.Queue(this, "QueueB", {
+      receiveMessageWaitTime: cdk.Duration.seconds(5),
+    });
+    
+    topic1.addSubscription(new subs.SqsSubscription(queueB, {
+      filterPolicy: {
+        
+        country: sns.SubscriptionFilter.stringFilter({
+          denylist: ["Ireland", "China"], 
+        }),
+      },
+    }));
+    
     
     const lambdaXFn = new lambdanode.NodejsFunction(this, "LambdaXFn", {
       architecture: lambda.Architecture.ARM_64,
@@ -109,12 +132,11 @@ export class ExamStack extends cdk.Stack {
       memorySize: 128,
       environment: {
         REGION: "eu-west-1",
-        TOPIC_ARN: topic1.topicArn, 
+        TOPIC_ARN: topic1.topicArn,
       },
     });
     
-    topic1.grantPublish(lambdaXFn);
-    
+  
     const lambdaYFn = new lambdanode.NodejsFunction(this, "LambdaYFn", {
       architecture: lambda.Architecture.ARM_64,
       runtime: lambda.Runtime.NODEJS_22_X,
@@ -126,13 +148,14 @@ export class ExamStack extends cdk.Stack {
       },
     });
     
+   
+    topic1.grantPublish(lambdaXFn);
     lambdaYFn.addEventSource(
-      new events.SqsEventSource(queueA, {
+      new events.SqsEventSource(queueB, {
         batchSize: 10,
         enabled: true,
       })
     );
-    
   }
 }
   

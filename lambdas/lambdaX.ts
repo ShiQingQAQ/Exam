@@ -5,21 +5,25 @@ const snsClient = new SNSClient({ region: "eu-west-1" });
 
 export const handler: Handler = async (event) => {
   try {
-    console.log("LambdaX Event:", JSON.stringify(event));
+    const body = JSON.parse(event.body || "{}");
+    const country = body.address?.country || "Unknown";
 
     await snsClient.send(
       new PublishCommand({
         TopicArn: process.env.TOPIC_ARN,
-        Message: JSON.stringify({
-          source: "LambdaX",
-          data: event.body || "default_data",
-        }),
+        Message: JSON.stringify(body),
+        MessageAttributes: {
+          country: {
+            DataType: "String",
+            StringValue: country,
+          },
+        },
       })
     );
 
     return { statusCode: 200 };
   } catch (error: any) {
-    console.error("LambdaX Error:", error);
+    console.error("Error:", error);
     throw new Error(JSON.stringify(error));
   }
 };
