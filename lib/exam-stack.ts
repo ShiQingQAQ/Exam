@@ -116,9 +116,11 @@ export class ExamStack extends cdk.Stack {
     
     topic1.addSubscription(new subs.SqsSubscription(queueB, {
       filterPolicy: {
-        
         country: sns.SubscriptionFilter.stringFilter({
           denylist: ["Ireland", "China"], 
+        }),
+        email: sns.SubscriptionFilter.stringFilter({
+          matchPrefixes: [""],
         }),
       },
     }));

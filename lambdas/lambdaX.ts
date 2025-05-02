@@ -7,6 +7,7 @@ export const handler: Handler = async (event) => {
   try {
     const body = JSON.parse(event.body || "{}");
     const country = body.address?.country || "Unknown";
+    const emailExists = "email" in body;
 
     await snsClient.send(
       new PublishCommand({
@@ -16,6 +17,11 @@ export const handler: Handler = async (event) => {
           country: {
             DataType: "String",
             StringValue: country,
+          },
+          email: {
+          
+            DataType: "String",
+            StringValue: emailExists ? body.email : "", 
           },
         },
       })
